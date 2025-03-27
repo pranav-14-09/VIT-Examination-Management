@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VIT Examination Management - Premium</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        /* PREMIUM STYLES */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1E3A8A, #0F172A);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #fff;
+            transition: all 0.3s ease;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(12px);
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+            width: 90%;
+            max-width: 450px;
+            transition: 0.4s;
+            text-align: center;
+        }
+
+        h2 {
+            margin-bottom: 15px;
+            font-weight: 600;
+            color: #FFD700;
+        }
+
+        input,
+        select,
+        button {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            border: none;
+            margin-top: 12px;
+            background: rgba(255, 255, 255, 0.08);
+            color: #fff;
+            font-size: 16px;
+        }
+
+        input::placeholder {
+            color: #aaa;
+        }
+
+        select {
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        button {
+            background: #FFD700;
+            color: #000;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        button:hover {
+            background: #FFC107;
+        }
+
+        .logout-btn {
+            background: #FF4D4D;
+            margin-top: 15px;
+        }
+
+        .logout-btn:hover {
+            background: #FF0000;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        #timer {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #FFD700;
+        }
+
+        .navigation-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+        }
+
+        .question-card {
+            background: rgba(255, 255, 255, 0.08);
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+
+        .delete-btn {
+            background: #FF4D4D;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            border: none;
+            margin-left: 10px;
+        }
+
+        .delete-btn:hover {
+            background: #FF0000;
+        }
+
+        #score {
+            font-size: 20px;
+            font-weight: bold;
+            margin-top: 15px;
+            color: #FFD700;
+        }
+
+        /* Student image with V logo */
+        .student-image {
+            width: 100px;
+            height: 100px;
+            margin: 0 auto 15px;
+            border-radius: 50%;
+            background: radial-gradient(circle at center, #FFD700 40%, #FFA500);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 50px;
+            font-weight: bold;
+            color: #1E3A8A;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Login -->
+    <div id="loginPage" class="container">
+        <div class="student-image">V</div>
+        <h2>VIT Examination Management</h2>
+        <input type="text" id="username" placeholder="Enter Username">
+        <input type="password" id="password" placeholder="Enter Password">
+        <select id="role">
+            <option value="student">Student</option>
+            <option value="faculty">Faculty</option>
+        </select>
+        <button onclick="login()">Login</button>
+    </div>
+
+    <!-- Student Dashboard -->
+    <div id="studentDashboard" class="container hidden">
+        <h2>Student Dashboard</h2>
+        <button onclick="startExam()">Start Exam</button>
+        <button class="logout-btn" onclick="logout()">Logout</button>
+    </div>
+
+    <!-- Faculty Dashboard -->
+    <div id="facultyDashboard" class="container hidden">
+        <h2>Faculty Dashboard</h2>
+        <input type="text" id="newQuestion" placeholder="Enter Question">
+        <input type="text" id="option1" placeholder="Option 1">
+        <input type="text" id="option2" placeholder="Option 2">
+        <input type="text" id="option3" placeholder="Option 3">
+        <input type="text" id="option4" placeholder="Option 4">
+        <input type="text" id="correctAnswer" placeholder="Correct Answer">
+        <button onclick="addQuestion()">Create Question</button>
+        <div id="questionList"></div>
+        <button class="logout-btn" onclick="logout()">Logout</button>
+    </div>
+
+    <!-- Exam Page -->
+    <div id="examPage" class="container hidden">
+        <h2>Exam</h2>
+        <div id="timer">Time Left: 30:00</div>
+        <div id="questionContainer"></div>
+        <div class="navigation-buttons">
+            <button id="prevBtn" onclick="prevQuestion()">Previous</button>
+            <button id="nextBtn" onclick="nextQuestion()">Next</button>
+        </div>
+        <button id="submitExamBtn" onclick="submitExam()">Submit Exam</button>
+        <div id="score" class="hidden"></div>
+    </div>
+
+    <script>
+        let facultyQuestions = JSON.parse(localStorage.getItem("questions")) || [];
+        let currentQuestionIndex = 0;
+        let studentAnswers = {};
+        let timerInterval;
+
+        function login() {
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value.trim();
+            const role = document.getElementById('role').value;
+
+            if (!username || !password) return alert("Enter username and password.");
+
+            if (password !== "password") return alert("Incorrect Password!");
+
+            document.getElementById('loginPage').classList.add('hidden');
+
+            if (role === "faculty") {
+                document.getElementById('facultyDashboard').classList.remove('hidden');
+                displayQuestions();
+            } else {
+                document.getElementById('studentDashboard').classList.remove('hidden');
+            }
+        }
+
+        function addQuestion() {
+            const question = document.getElementById("newQuestion").value;
+            const options = [1, 2, 3, 4].map(i => document.getElementById("option" + i).value);
+            const correctAnswer = document.getElementById("correctAnswer").value;
+
+            if (!question || options.some(opt => !opt) || !correctAnswer) return alert("Fill all fields!");
+
+            facultyQuestions.push({ question, options, correctAnswer });
+            localStorage.setItem("questions", JSON.stringify(facultyQuestions));
+            displayQuestions();
+        }
+
+        function displayQuestions() {
+            const list = document.getElementById("questionList");
+            list.innerHTML = "";
+            facultyQuestions.forEach((q, i) => {
+                list.innerHTML += `<div class="question-card">
+                <b>${i + 1}.</b> ${q.question}
+                <button class="delete-btn" onclick="deleteQuestion(${i})">Delete</button>
+                </div>`;
+            });
+        }
+
+        function deleteQuestion(index) {
+            facultyQuestions.splice(index, 1);
+            localStorage.setItem("questions", JSON.stringify(facultyQuestions));
+            displayQuestions();
+        }
+
+        function startExam() {
+            if (facultyQuestions.length === 0) return alert("No questions available!");
+            document.getElementById('studentDashboard').classList.add('hidden');
+            document.getElementById('examPage').classList.remove('hidden');
+            currentQuestionIndex = 0;
+            displayQuestion();
+            startFullscreen();
+            startTimer();
+        }
+
+        function displayQuestion() {
+            const q = facultyQuestions[currentQuestionIndex];
+            document.getElementById('questionContainer').innerHTML = `<h3>${currentQuestionIndex + 1}. ${q.question}</h3>` +
+                q.options.map(opt => `<p><input type="radio" name="answer" value="${opt}" onchange="saveAnswer('${opt}')"> ${opt}</p>`).join('');
+
+            document.getElementById('nextBtn').style.display = (currentQuestionIndex === facultyQuestions.length - 1) ? 'none' : 'inline-block';
+            document.getElementById('prevBtn').style.display = (currentQuestionIndex === 0) ? 'none' : 'inline-block';
+        }
+
+        function saveAnswer(ans) { studentAnswers[currentQuestionIndex] = ans; }
+
+        function prevQuestion() { if (currentQuestionIndex > 0) { currentQuestionIndex--; displayQuestion(); } }
+
+        function nextQuestion() { if (currentQuestionIndex < facultyQuestions.length - 1) { currentQuestionIndex++; displayQuestion(); } }
+
+        function startFullscreen() {
+            document.documentElement.requestFullscreen();
+            document.addEventListener("fullscreenchange", () => {
+                if (!document.fullscreenElement) submitExam();
+            });
+        }
+
+        function startTimer() {
+            let time = 30 * 60;
+            timerInterval = setInterval(() => {
+                if (--time < 0) return submitExam();
+                const min = Math.floor(time / 60), sec = time % 60;
+                document.getElementById('timer').innerText = `Time Left: ${min}:${sec < 10 ? '0' : ''}${sec}`;
+            }, 1000);
+        }
+
+        function submitExam() {
+            clearInterval(timerInterval);
+            const score = Object.keys(studentAnswers).filter(i => studentAnswers[i] === facultyQuestions[i].correctAnswer).length;
+            document.getElementById('questionContainer').innerHTML = '';
+            document.getElementById('score').innerText = `Your Score: ${score}/${facultyQuestions.length}`;
+            document.getElementById('score').classList.remove('hidden');
+            document.getElementById('nextBtn').style.display = 'none';
+            document.getElementById('prevBtn').style.display = 'none';
+            document.getElementById('submitExamBtn').style.display = 'none';
+            setTimeout(logout, 4000);
+        }
+
+        function logout() {
+            if (document.fullscreenElement) document.exitFullscreen();
+            location.reload();
+        }
+    </script>
+</body>
+
+</html>
